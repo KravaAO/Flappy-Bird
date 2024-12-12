@@ -1,4 +1,5 @@
 from pygame import *
+import time as t
 import random
 
 init()
@@ -8,7 +9,7 @@ size = 1200, 800
 window = display.set_mode(size)
 clock = time.Clock()
 
-ft = font.Font(None, 40)
+ft = font.Font(None, 50)
 
 
 class GameSprite(sprite.Sprite):
@@ -20,6 +21,7 @@ class GameSprite(sprite.Sprite):
         self.rect.y = y
         self.score = 0
 
+
     def reset(self):
         window.blit(self.image, (self.rect.x, self.rect.y))
 
@@ -30,7 +32,7 @@ class Birds(GameSprite):
         self.jump = False
         self.y_vel = 0.2
         self.fall_speed = 4
-        self.finish = False
+        self.died = False
 
     def update(self):
         keys = key.get_pressed()
@@ -45,8 +47,8 @@ class Birds(GameSprite):
             self.rect.y += self.fall_speed
             self.fall_speed += self.y_vel
 
-        if self.rect.y <= 0:
-            self.fall_bird()
+        if self.rect.y <= 0 or self.rect.y >= size[1]:
+            self.died = True
 
     def fall_bird(self):
         self.rect.y += self.fall_speed
@@ -63,21 +65,21 @@ class Pipe(GameSprite):
             self.image = transform.rotate(self.image, 180)
 
     def update(self):
-        global score
         self.rect.x -= self.speed
-
         if self.rect.x <= - 150:
             self.kill()
         if self.rect.x <= bird.rect.x and not self.passed:
             self.passed = True
             bird.score += 0.5
-            score += 0.5
+
         if len(pipes) < 6:
             create_new_pipe()
 
 
-birds = list()
-bird = Birds('img/bird.png', 100, 300, 80, 80)
+def new_birds():
+    bird = Birds('img/bird.png', 100, 300, 80, 80)
+    return bird
+
 pipes = sprite.Group()
 
 
@@ -96,6 +98,8 @@ def create_new_pipe():
 
 score = 0
 create_new_pipe()
+bird =new_birds()
+high_score = 0
 while True:
     for e in event.get():
         if e.type == QUIT:
@@ -107,16 +111,23 @@ while True:
     bird.reset()
     pipes.draw(window)
 
-    score_text = ft.render(str(score), True, (255, 255, 255))
+    score_text = ft.render('Рахунок: ' + str(bird.score), True, (255, 255, 255))
     window.blit(score_text, (600, 50))
-    if bird.finish:
+    if sprite.spritecollide(bird, pipes, False) and not bird.died:
+        bird.died = True
+
+    if bird.died:
         bird.fall_bird()
 
+    bird.update()
+    pipes.update()
     display.update()
     clock.tick(60)
 
-    if not sprite.spritecollide(bird, pipes, False) and not bird.finish:
-        pipes.update()
-        bird.update()
-    else:
-        bird.finish = True
+    if bird.died:
+        t.sleep(0.5)
+        score = 0
+        pipes = sprite.Group()
+        create_new_pipe()
+        bird = new_birds()
+        bird.died = False
