@@ -119,8 +119,8 @@ def save_data(data):
 
 def train_model(data):
     df = pd.DataFrame(data)
-    df = df.iloc[:-70]
-    X = df[["bird_y", "bird_speed", "bird_to_pipe_gap_y", "pipe_x", "pipe_down_y", "pipe_up_y"]]
+    df = df.iloc[:-50]
+    X = df[["bird_y", "bird_speed", "pipe_gap_y", "bird_to_pipe_gap_y", "pipe_x", "pipe_down_y", "pipe_up_y"]]
     y = df["jump"]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.45)
     model = RandomForestClassifier(n_estimators=100)
@@ -130,6 +130,7 @@ def train_model(data):
 
 model = None
 should_jump = False
+
 gen = 1
 while True:
     for e in event.get():
@@ -166,6 +167,7 @@ while True:
         data.append({
             "bird_y": bird.rect.y,
             "bird_speed": bird.fall_speed,
+            "pipe_gap_y": list(pipes)[0].rect.y - list(pipes)[1].rect.y,
 
             "bird_to_pipe_gap_y": bird.rect.y - ( (list(pipes)[0].rect.y + list(pipes)[1].rect.y) / 2 ),
             "pipe_x": list(pipes)[0].rect.x,
@@ -179,11 +181,11 @@ while True:
         model = train_model(data)
         gen += 1
 
-
     if model:
         X_input = pd.DataFrame([{
             "bird_y": bird.rect.y,
             "bird_speed": bird.fall_speed,
+            "pipe_gap_y": list(pipes)[0].rect.y - list(pipes)[1].rect.y,
             "bird_to_pipe_gap_y": bird.rect.y - (list(pipes)[0].rect.y + list(pipes)[1].rect.y) / 2,
             "pipe_x": list(pipes)[0].rect.x,
             "pipe_down_y": list(pipes)[0].rect.y,
