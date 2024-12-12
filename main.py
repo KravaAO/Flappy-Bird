@@ -49,8 +49,6 @@ class Birds(GameSprite):
             self.rect.y += self.fall_speed
             self.fall_speed += self.y_vel
 
-        if self.rect.y <= 0 or self.rect.y >= size[1]:
-            self.died = True
 
     def fall_bird(self):
         self.rect.y += self.fall_speed
@@ -120,15 +118,12 @@ def save_data(data):
 
 
 def train_model(data):
-    df = pd.DataFrame(data).fillna(0)
-    if len(df) < 2:
-        print("Недостатньо даних для навчання.")
-        return None
-
-    X = df[["bird_y", "bird_speed", "pipe_gap_y", "bird_to_pipe_gap_y", "pipe_x", "pipe_down_y", "pipe_up_y"]]
+    df = pd.DataFrame(data)
+    df = df.iloc[:-70]
+    X = df[["bird_y", "bird_speed", "bird_to_pipe_gap_y", "pipe_x", "pipe_down_y", "pipe_up_y"]]
     y = df["jump"]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.35)
-    model = RandomForestClassifier(n_estimators=10)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.45)
+    model = RandomForestClassifier(n_estimators=100)
     model.fit(X_train, y_train)
     return model
 
@@ -150,9 +145,10 @@ while True:
     score_text = ft.render('Рахунок: ' + str(bird.score), True, (255, 255, 255))
     window.blit(score_text, (600, 50))
 
-
     if bird.died:
         bird.fall_bird()
+    if bird.rect.y <= 0 or bird.rect.y >= size[1]:
+        bird.died = True
 
     display.update()
     clock.tick(60)
@@ -160,6 +156,7 @@ while True:
     if sprite.spritecollide(bird, pipes, False) and not bird.died:
         bird.died = True
         gen += 1
+
     if not model and not bird.died:
         if gen <= 1:
             keys = key.get_pressed()
@@ -169,7 +166,6 @@ while True:
         data.append({
             "bird_y": bird.rect.y,
             "bird_speed": bird.fall_speed,
-            "pipe_gap_y": list(pipes)[0].rect.y - list(pipes)[1].rect.y,
 
             "bird_to_pipe_gap_y": bird.rect.y - ( (list(pipes)[0].rect.y + list(pipes)[1].rect.y) / 2 ),
             "pipe_x": list(pipes)[0].rect.x,
@@ -181,14 +177,13 @@ while True:
 
     if  gen == 2:
         model = train_model(data)
-
+        gen += 1
 
 
     if model:
         X_input = pd.DataFrame([{
             "bird_y": bird.rect.y,
             "bird_speed": bird.fall_speed,
-            "pipe_gap_y": list(pipes)[0].rect.y - list(pipes)[1].rect.y,
             "bird_to_pipe_gap_y": bird.rect.y - (list(pipes)[0].rect.y + list(pipes)[1].rect.y) / 2,
             "pipe_x": list(pipes)[0].rect.x,
             "pipe_down_y": list(pipes)[0].rect.y,
