@@ -1,6 +1,7 @@
 from pygame import *
 import time as t
 import random
+import pandas as pd
 
 init()
 font.init()
@@ -113,6 +114,11 @@ def save_data(data):
     df = pd.DataFrame(data)
     df.to_csv('output.csv', index=False)
 
+def train_model(data):
+    df = pd.read_csv('output.csv')
+    X_train, X_test, y_train, y_test = tra
+
+
 while True:
     for e in event.get():
         if e.type == QUIT:
@@ -137,17 +143,18 @@ while True:
     if sprite.spritecollide(bird, pipes, False) and not bird.died:
         bird.died = True
     else:
-        should_jump = random.choice([True, False, False, False])
+        should_jump = random.choice([True, False, False, False, False, False])
         data.append({
             "bird_y": bird.rect.y,
-            "bird_x": 100,
             "bird_speed": bird.fall_speed,
             "pipe_down_x": list(pipes)[0].rect.x,
             "pipe_down_y": list(pipes)[0].rect.y,
             "pipe_up_x": list(pipes)[1].rect.x,
             "pipe_up_y": list(pipes)[1].rect.y,
             "pipe_gap_y": list(pipes)[0].rect.y - list(pipes)[1].rect.y + 400,
-            "bird_to_pipe_gap_y": bird.rect.y - (list(pipes)[0].rect.y + list(pipes)[1].rect.y + 400) / 2
+            "bird_to_pipe_gap_y": bird.rect.y - (list(pipes)[0].rect.y + list(pipes)[1].rect.y + 400) / 2,
+            "jump": int(should_jump),
+            "score": bird.score
         })
 
         bird.jump = should_jump
@@ -157,6 +164,7 @@ while True:
     pipes.update()
 
     if bird.died:
+        save_data(data)
         t.sleep(0.5)
         score = 0
         pipes = sprite.Group()
