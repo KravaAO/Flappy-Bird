@@ -68,7 +68,7 @@ class Pipe(GameSprite):
 
     def update(self):
         self.rect.x -= self.speed
-        if self.rect.x <= 70:
+        if self.rect.x <= -50:
             self.kill()
         if self.rect.x <= bird.rect.x and not self.passed:
             self.passed = True
@@ -79,7 +79,7 @@ class Pipe(GameSprite):
 
 
 def new_birds():
-    bird = Birds('img/bird.png', 100, 300, 80, 80)
+    bird = Birds('img/bird.png', 20, 300, 80, 80)
     return bird
 
 pipes = sprite.Group()
@@ -125,7 +125,7 @@ def train_model(data):
         print("Недостатньо даних для навчання.")
         return None
 
-    X = df[["bird_y", "bird_speed", "pipe_gap_y", "bird_to_pipe_gap_y", "score"]]
+    X = df[["bird_y", "bird_speed", "pipe_gap_y", "bird_to_pipe_gap_y", "pipe_x", "pipe_down_y", "pipe_up_y"]]
     y = df["jump"]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.35)
     model = RandomForestClassifier(n_estimators=10)
@@ -161,7 +161,7 @@ while True:
         bird.died = True
         gen += 1
     if not model and not bird.died:
-        if gen <= 2:
+        if gen <= 1:
             keys = key.get_pressed()
             if keys[K_SPACE]:
                 should_jump = True
@@ -172,14 +172,16 @@ while True:
             "pipe_gap_y": list(pipes)[0].rect.y - list(pipes)[1].rect.y,
 
             "bird_to_pipe_gap_y": bird.rect.y - ( (list(pipes)[0].rect.y + list(pipes)[1].rect.y) / 2 ),
-
-            "jump": int(should_jump),
-            "score": bird.score
+            "pipe_x": list(pipes)[0].rect.x,
+            "pipe_down_y": list(pipes)[0].rect.y,
+            "pipe_up_y": list(pipes)[1].rect.y,
+            "jump": int(should_jump)
         })
         bird.jump = should_jump
 
-    if len(data) >= 10 and gen > 2:
+    if  gen == 2:
         model = train_model(data)
+
 
 
     if model:
@@ -188,7 +190,9 @@ while True:
             "bird_speed": bird.fall_speed,
             "pipe_gap_y": list(pipes)[0].rect.y - list(pipes)[1].rect.y,
             "bird_to_pipe_gap_y": bird.rect.y - (list(pipes)[0].rect.y + list(pipes)[1].rect.y) / 2,
-            "score": bird.score
+            "pipe_x": list(pipes)[0].rect.x,
+            "pipe_down_y": list(pipes)[0].rect.y,
+            "pipe_up_y": list(pipes)[1].rect.y,
         }])
 
         should_jump = model.predict(X_input)[0]
